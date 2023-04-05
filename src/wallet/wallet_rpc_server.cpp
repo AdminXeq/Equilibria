@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2019, The Monero Project
-// 
+//
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are
@@ -1157,6 +1157,39 @@ namespace tools
           res.tx_hash, req.get_tx_hex, res.tx_blob, req.get_tx_metadata, res.tx_metadata, er);
   }
 
+  bool wallet_rpc_server::on_register_service_node(const wallet_rpc::COMMAND_RPC_REGISTER_SERVICE_NODE::request& req, wallet_rpc::COMMAND_RPC_REGISTER_SERVICE_NODE::response& res, epee::json_rpc::error& er, const connection_context *ctx)
+    {
+      if(!m_wallet)
+        return not_open(er);
+
+      if(m_restricted)
+      {
+        er.code = WALLET_RPC_ERROR_CODE_DENIED;
+        er.message = "Register service node command is unavailable in restricted mode.";
+        return false;
+      }
+
+      std::vector<std::string> args;
+      boost::split(args, req.register_service_node_str, boost::is_any_of(" "));
+
+      if(args.size() > 0)
+      {
+        if(args[0] == "register_service_node")
+          args.erase(args.begin());
+      }
+
+      tools::wallet2::register_service_node_result register_result = m_wallet->create_register_service_node_tx(args, 0/*subaddr_account*/);
+      if(register_result.status != tools::wallet2::register_service_node_result_status::success)
+      {
+        er.code    = WALLET_RPC_ERROR_CODE_TX_NOT_POSSIBLE;
+        er.message = register_result.msg;
+        return false;
+      }
+
+      std::vector<tools::wallet2::pending_tx> ptx_vector = {register_result.ptx};
+      return fill_response(ptx_vector, req.get_tx_key, res.tx_key, res.amount, res.fee, res.multisig_txset, res.unsigned_txset, req.do_not_relay, res.tx_hash, req.get_tx_hex, res.tx_blob, req.get_tx_metadata, res.tx_metadata, er);
+    }
+
 
     //------------------------------------------------------------------------------------------------------------------------------
   bool wallet_rpc_server::on_swap(const wallet_rpc::COMMAND_RPC_SWAP::request& req, wallet_rpc::COMMAND_RPC_SWAP::response& res, epee::json_rpc::error& er, const connection_context *ctx)
@@ -1184,7 +1217,7 @@ namespace tools
       uint64_t mixin = m_wallet->adjust_mixin(req.ring_size ? req.ring_size - 1 : 0);
       uint32_t priority = m_wallet->adjust_priority(req.priority);
       std::vector<wallet2::pending_tx> ptx_vector = m_wallet->create_transactions_2(dsts, mixin, req.unlock_time, priority, extra, req.account_index, req.subaddr_indices);
-      
+
       if (ptx_vector.empty())
       {
         er.code = WALLET_RPC_ERROR_CODE_TX_NOT_POSSIBLE;
@@ -3537,7 +3570,7 @@ namespace tools
       er.message = "WALLET_RPC_ERROR_CODE_UNKNOWN_ERROR";
     }
   }
-  
+
     //------------------------------------------------------------------------------------------------------------------------------
   bool wallet_rpc_server::on_generate_from_keys(const wallet_rpc::COMMAND_RPC_GENERATE_FROM_KEYS::request &req, wallet_rpc::COMMAND_RPC_GENERATE_FROM_KEYS::response &res, epee::json_rpc::error &er, const connection_context *ctx)
   {
@@ -4371,7 +4404,7 @@ namespace tools
       er.message = "Command unavailable in restricted mode.";
       return false;
     }
-   
+
     std::vector<std::vector<uint8_t>> ssl_allowed_fingerprints;
     ssl_allowed_fingerprints.reserve(req.ssl_allowed_fingerprints.size());
     for (const std::string &fp: req.ssl_allowed_fingerprints)
