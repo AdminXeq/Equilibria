@@ -67,6 +67,7 @@ static void print_extra_fields(const std::vector<cryptonote::tx_extra_field> &fi
     else if (typeid(cryptonote::tx_extra_service_node_register) == fields[n].type()) std::cout << "SN register: " << boost::join(boost::get<cryptonote::tx_extra_service_node_register>(fields[n]).m_public_view_keys | boost::adaptors::transformed([](const crypto::public_key &key){ return epee::string_tools::pod_to_hex(key); }), ", " );
     else if (typeid(cryptonote::tx_extra_service_node_pubkey) == fields[n].type()) std::cout << "SN pub key: " << boost::get<cryptonote::tx_extra_service_node_pubkey>(fields[n]).m_service_node_key;
     else if (typeid(cryptonote::tx_extra_service_node_winner) == fields[n].type()) std::cout << "SN winner: " << boost::get<cryptonote::tx_extra_service_node_winner>(fields[n]).m_service_node_key;
+    else if (typeid(cryptonote::tx_extra_burn) == fields[n].type()) std::cout << "XEQ Amount Burnt: " << cryptonote::print_money(boost::get<cryptonote::tx_extra_burn>(fields[n]).amount);
     else std::cout << "unknown";
     std::cout << std::endl;
   }
@@ -136,6 +137,14 @@ int main(int argc, char* argv[])
   {
     std::cout << "Parsed block:" << std::endl;
     std::cout << cryptonote::obj_to_json_str(block) << std::endl;
+    bool parsed = cryptonote::parse_tx_extra(block.miner_tx.extra, fields);
+    if (!parsed)
+      std::cout << "Failed to parse tx_extra" << std::endl;
+
+    if (!fields.empty())
+      print_extra_fields(fields);
+    else
+      std::cout << "No fields were found in tx_extra" << std::endl;
   }
   else if (cryptonote::parse_and_validate_tx_from_blob(blob, tx) || cryptonote::parse_and_validate_tx_base_from_blob(blob, tx))
   {

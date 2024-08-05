@@ -35,7 +35,7 @@ monero_add_executable(cn_deserialize
   ${cn_deserialize_private_headers})
 
 target_link_libraries(cn_deserialize
-  LINK_PRIVATE
+  PRIVATE
     cryptonote_core
     blockchain_db
     device
@@ -58,7 +58,7 @@ monero_add_executable(object_sizes
   ${object_sizes_private_headers})
 
 target_link_libraries(object_sizes
-  LINK_PRIVATE
+  PRIVATE
     cryptonote_core
     blockchain_db
     p2p
@@ -79,7 +79,7 @@ monero_add_executable(dns_checks
   ${dns_checks_private_headers})
 
 target_link_libraries(dns_checks
-  LINK_PRIVATE
+  PRIVATE
     common
     epee
     version
